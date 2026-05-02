@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מד מצב רוח</title>
+    <title>מד הזדהות</title>
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
@@ -15,9 +15,11 @@
             background-color: #f4f7f6;
             margin: 0;
             overflow: hidden;
+            /* מניעת בחירת טקסט בטעות בזמן גרירה */
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        /* עטיפת הסמיילי והטולטיפ הסודי */
         .emoji-container {
             position: relative;
             margin-bottom: 30px;
@@ -25,16 +27,14 @@
 
         #emoji {
             font-size: 100px;
-            cursor: pointer; /* רומז שניתן ללחוץ */
+            cursor: pointer;
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            user-select: none;
         }
 
         .pop {
             transform: scale(1.3) rotate(5deg);
         }
 
-        /* תצוגת הערך הסודי כטולטיפ מרחף */
         #value-display {
             position: absolute;
             top: -40px;
@@ -50,6 +50,7 @@
             visibility: hidden;
             transition: opacity 0.3s ease, transform 0.3s ease;
             white-space: nowrap;
+            pointer-events: none;
         }
 
         #value-display.show {
@@ -59,31 +60,12 @@
         }
 
         .container {
-            display: flex;
-            align-items: flex-end;
-            gap: 80px;
             background: white;
-            padding: 50px;
+            padding: 50px 80px;
             border-radius: 30px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         }
 
-        /* הסליידר (המד) - עכשיו מופיע ראשון ב-DOM ולכן בצד ימין ב-RTL */
-        .controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        input[type=range] {
-            writing-mode: bt-lr;
-            -webkit-appearance: slider-vertical;
-            width: 15px;
-            height: 300px;
-            cursor: pointer;
-        }
-
-        /* עיצוב המבחנה - עכשיו בצד שמאל */
         .test-tube {
             width: 80px;
             height: 300px;
@@ -95,6 +77,8 @@
             overflow: hidden;
             background: #e8ecf1;
             box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+            cursor: ns-resize; /* סמן גרירה אנכי */
+            touch-action: none; /* מניעת גלילת מסך במובייל בזמן נגיעה במבחנה */
         }
 
         .liquid {
@@ -103,11 +87,10 @@
             width: 100%;
             height: 50%;
             background: linear-gradient(to top, #ff416c, #ff4b2b);
-            /* מעברים מהירים וחלקים יותר */
-            transition: height 0.1s ease-out, background 0.2s ease-out, box-shadow 0.2s ease-out;
+            transition: background 0.2s ease-out, box-shadow 0.2s ease-out;
             box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            pointer-events: none; /* מבטיח שהאירועים יקלטו על המבחנה עצמה */
         }
-
     </style>
 </head>
 <body>
@@ -118,54 +101,54 @@
     </div>
 
     <div class="container">
-        <!-- מד (Slider) הועבר לפה כדי להחליף צדדים -->
-        <div class="controls">
-            <input type="range" id="meter" min="0" max="10" step="0.1" value="5">
-        </div>
-
-        <!-- מבחנה -->
-        <div class="test-tube">
+        <div class="test-tube" id="test-tube">
             <div id="liquid" class="liquid"></div>
         </div>
     </div>
 
     <script>
-        const meter = document.getElementById('meter');
+        const testTube = document.getElementById('test-tube');
         const liquid = document.getElementById('liquid');
         const emoji = document.getElementById('emoji');
         const currentValText = document.getElementById('current-val');
         const valueDisplay = document.getElementById('value-display');
 
         let currentMood = 'neutral';
+        let isDragging = false;
 
-        meter.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
+        // פונקציה לעדכון גובה המבחנה לפי מיקום העכבר/מגע
+        function updateLevel(clientY) {
+            const rect = testTube.getBoundingClientRect();
+            // חישוב המיקום היחסי (0 למעלה, 1 למטה)
+            let percentage = 1 - ((clientY - rect.top) / rect.height);
             
-            // עדכון חלק ומהיר של הגובה
-            liquid.style.height = (val * 10) + '%';
+            // הגבלת הגבולות בין 0 ל-100 אחוז
+            if (percentage < 0) percentage = 0;
+            if (percentage > 1) percentage = 1;
+
+            const val = percentage * 10;
+            
+            liquid.style.height = `${percentage * 100}%`;
             currentValText.textContent = val.toFixed(1);
 
-            // לוגיקת סמיילי וצבעים
             let newMood, newEmoji, newColor;
 
             if (val > 7) {
-                newMood = 'happy';
-                newEmoji = '😊';
+                newMood = 'agree';
+                newEmoji = '🤩'; // מסכים / מזדהה
                 newColor = 'linear-gradient(to top, #00b09b, #96c93d)';
             } else if (val < 3) {
-                newMood = 'sad';
-                newEmoji = '😢';
+                newMood = 'disagree';
+                newEmoji = '😒'; // לא מסכים
                 newColor = 'linear-gradient(to top, #cb2d3e, #ef473a)';
             } else {
                 newMood = 'neutral';
-                newEmoji = '😐';
+                newEmoji = '😐'; // ניטרלי
                 newColor = 'linear-gradient(to top, #ff416c, #ff4b2b)';
             }
 
-            // החלת צבע נוזל
             liquid.style.background = newColor;
 
-            // החלפת סמיילי עם אנימציית קפיצה רק כשיש שינוי במצב
             if (currentMood !== newMood) {
                 emoji.classList.add('pop');
                 setTimeout(() => {
@@ -174,6 +157,37 @@
                 }, 100);
                 currentMood = newMood;
             }
+        }
+
+        // אירועי עכבר
+        testTube.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateLevel(e.clientY);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            updateLevel(e.clientY);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // אירועי מגע (למובייל)
+        testTube.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            updateLevel(e.touches[0].clientY);
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            updateLevel(e.touches[0].clientY);
+            e.preventDefault(); // מניעת גלילה נוספת
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
         });
 
         // כפתור סודי: לחיצה כפולה על הסמיילי
