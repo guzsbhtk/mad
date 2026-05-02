@@ -1,43 +1,100 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מד מצב רוח</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background-color: #f0f2f5;
+            background-color: #f4f7f6;
             margin: 0;
+            overflow: hidden;
+        }
+
+        /* עטיפת הסמיילי והטולטיפ הסודי */
+        .emoji-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        #emoji {
+            font-size: 100px;
+            cursor: pointer; /* רומז שניתן ללחוץ */
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+        }
+
+        .pop {
+            transform: scale(1.3) rotate(5deg);
+        }
+
+        /* תצוגת הערך הסודי כטולטיפ מרחף */
+        #value-display {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            white-space: nowrap;
+        }
+
+        #value-display.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -10px);
         }
 
         .container {
             display: flex;
             align-items: flex-end;
-            gap: 50px;
+            gap: 80px;
             background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 50px;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         }
 
-        /* עיצוב המבחנה */
+        /* הסליידר (המד) - עכשיו מופיע ראשון ב-DOM ולכן בצד ימין ב-RTL */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type=range] {
+            writing-mode: bt-lr;
+            -webkit-appearance: slider-vertical;
+            width: 15px;
+            height: 300px;
+            cursor: pointer;
+        }
+
+        /* עיצוב המבחנה - עכשיו בצד שמאל */
         .test-tube {
-            width: 50px;
-            height: 200px;
-            border: 4px solid #333;
+            width: 80px;
+            height: 300px;
+            border: 6px solid #2c3e50;
             border-top: none;
-            border-bottom-left-radius: 25px;
-            border-bottom-right-radius: 25px;
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
             position: relative;
             overflow: hidden;
-            background: #eee;
+            background: #e8ecf1;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
         }
 
         .liquid {
@@ -45,83 +102,31 @@
             bottom: 0;
             width: 100%;
             height: 50%;
-            /* ברירת מחדל */
             background: linear-gradient(to top, #ff416c, #ff4b2b);
-            transition: height 0.3s ease, background 0.5s ease;
+            /* מעברים מהירים וחלקים יותר */
+            transition: height 0.1s ease-out, background 0.2s ease-out, box-shadow 0.2s ease-out;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
         }
 
-        /* עיצוב הסליידר (המד) */
-        .controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        input[type=range] {
-            writing-mode: bt-lr;
-            /* לשינוי כיוון בדפדפנים תומכים */
-            -webkit-appearance: slider-vertical;
-            width: 8px;
-            height: 200px;
-            padding: 0 5px;
-        }
-
-        #emoji {
-            font-size: 50px;
-            margin-bottom: 10px;
-            transition: transform 0.2s;
-        }
-
-        /* כפתור סודי */
-        .secret-area {
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        #secret-btn {
-            background: none;
-            border: 1px solid #ccc;
-            color: #ccc;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-        }
-
-        #secret-btn:hover {
-            color: #666;
-            border-color: #666;
-        }
-
-        #value-display {
-            display: none;
-            margin-top: 10px;
-            font-weight: bold;
-            color: #333;
-        }
     </style>
 </head>
-
 <body>
 
-    <div id="emoji">😐</div>
+    <div class="emoji-container">
+        <div id="value-display"><span id="current-val">5.0</span> / 10</div>
+        <div id="emoji">😐</div>
+    </div>
 
     <div class="container">
+        <!-- מד (Slider) הועבר לפה כדי להחליף צדדים -->
+        <div class="controls">
+            <input type="range" id="meter" min="0" max="10" step="0.1" value="5">
+        </div>
+
         <!-- מבחנה -->
         <div class="test-tube">
             <div id="liquid" class="liquid"></div>
         </div>
-
-        <!-- מד (Slider) -->
-        <div class="controls">
-            <input type="range" id="meter" min="0" max="10" step="0.1" value="5">
-        </div>
-    </div>
-
-    <div class="secret-area">
-        <button id="secret-btn">כפתור סודי</button>
-        <div id="value-display"><span id="current-val">5</span>/10</div>
     </div>
 
     <script>
@@ -129,40 +134,52 @@
         const liquid = document.getElementById('liquid');
         const emoji = document.getElementById('emoji');
         const currentValText = document.getElementById('current-val');
-        const secretBtn = document.getElementById('secret-btn');
         const valueDisplay = document.getElementById('value-display');
+
+        let currentMood = 'neutral';
 
         meter.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
-
-            // עדכון גובה הנוזל במבחנה
+            
+            // עדכון חלק ומהיר של הגובה
             liquid.style.height = (val * 10) + '%';
-
-            // עדכון ערך מספרי (נסתר)
             currentValText.textContent = val.toFixed(1);
 
-            // לוגיקת סמיילי וצבע
+            // לוגיקת סמיילי וצבעים
+            let newMood, newEmoji, newColor;
+
             if (val > 7) {
-                emoji.textContent = '😊';
-                liquid.style.background = 'linear-gradient(to top, #00b09b, #96c93d)'; // ירוק
+                newMood = 'happy';
+                newEmoji = '😊';
+                newColor = 'linear-gradient(to top, #00b09b, #96c93d)';
             } else if (val < 3) {
-                emoji.textContent = '😢';
-                liquid.style.background = 'linear-gradient(to top, #cb2d3e, #ef473a)'; // אדום
+                newMood = 'sad';
+                newEmoji = '😢';
+                newColor = 'linear-gradient(to top, #cb2d3e, #ef473a)';
             } else {
-                emoji.textContent = '😐';
-                liquid.style.background = 'linear-gradient(to top, #ff416c, #ff4b2b)'; // כתום/ורוד
+                newMood = 'neutral';
+                newEmoji = '😐';
+                newColor = 'linear-gradient(to top, #ff416c, #ff4b2b)';
+            }
+
+            // החלת צבע נוזל
+            liquid.style.background = newColor;
+
+            // החלפת סמיילי עם אנימציית קפיצה רק כשיש שינוי במצב
+            if (currentMood !== newMood) {
+                emoji.classList.add('pop');
+                setTimeout(() => {
+                    emoji.textContent = newEmoji;
+                    setTimeout(() => emoji.classList.remove('pop'), 100);
+                }, 100);
+                currentMood = newMood;
             }
         });
 
-        // הצגת הערך הסודי
-        secretBtn.addEventListener('click', () => {
-            if (valueDisplay.style.display === 'block') {
-                valueDisplay.style.display = 'none';
-            } else {
-                valueDisplay.style.display = 'block';
-            }
+        // כפתור סודי: לחיצה כפולה על הסמיילי
+        emoji.addEventListener('dblclick', () => {
+            valueDisplay.classList.toggle('show');
         });
     </script>
 </body>
-
 </html>
