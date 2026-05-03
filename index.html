@@ -15,7 +15,6 @@
             background-color: #f4f7f6;
             margin: 0;
             overflow: hidden;
-            /* מניעת בחירת טקסט בטעות בזמן גרירה */
             user-select: none;
             -webkit-user-select: none;
         }
@@ -77,8 +76,8 @@
             overflow: hidden;
             background: #e8ecf1;
             box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
-            cursor: ns-resize; /* סמן גרירה אנכי */
-            touch-action: none; /* מניעת גלילת מסך במובייל בזמן נגיעה במבחנה */
+            cursor: ns-resize;
+            touch-action: none;
         }
 
         .liquid {
@@ -86,10 +85,10 @@
             bottom: 0;
             width: 100%;
             height: 50%;
-            background: linear-gradient(to top, #ff416c, #ff4b2b);
-            transition: background 0.2s ease-out, box-shadow 0.2s ease-out;
+            background: #96c93d; /* צבע ירוק אחיד וקבוע */
+            transition: height 0.1s ease-out; /* מעבר רק לגובה */
             box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
-            pointer-events: none; /* מבטיח שהאירועים יקלטו על המבחנה עצמה */
+            pointer-events: none;
         }
     </style>
 </head>
@@ -116,13 +115,10 @@
         let currentMood = 'neutral';
         let isDragging = false;
 
-        // פונקציה לעדכון גובה המבחנה לפי מיקום העכבר/מגע
         function updateLevel(clientY) {
             const rect = testTube.getBoundingClientRect();
-            // חישוב המיקום היחסי (0 למעלה, 1 למטה)
             let percentage = 1 - ((clientY - rect.top) / rect.height);
             
-            // הגבלת הגבולות בין 0 ל-100 אחוז
             if (percentage < 0) percentage = 0;
             if (percentage > 1) percentage = 1;
 
@@ -131,23 +127,18 @@
             liquid.style.height = `${percentage * 100}%`;
             currentValText.textContent = val.toFixed(1);
 
-            let newMood, newEmoji, newColor;
+            let newMood, newEmoji;
 
             if (val > 7) {
                 newMood = 'agree';
-                newEmoji = '🤩'; // מסכים / מזדהה
-                newColor = 'linear-gradient(to top, #00b09b, #96c93d)';
+                newEmoji = '🤩'; 
             } else if (val < 3) {
                 newMood = 'disagree';
-                newEmoji = '😒'; // לא מסכים
-                newColor = 'linear-gradient(to top, #cb2d3e, #ef473a)';
+                newEmoji = '😒'; 
             } else {
                 newMood = 'neutral';
-                newEmoji = '😐'; // ניטרלי
-                newColor = 'linear-gradient(to top, #ff416c, #ff4b2b)';
+                newEmoji = '😐'; 
             }
-
-            liquid.style.background = newColor;
 
             if (currentMood !== newMood) {
                 emoji.classList.add('pop');
@@ -159,7 +150,6 @@
             }
         }
 
-        // אירועי עכבר
         testTube.addEventListener('mousedown', (e) => {
             isDragging = true;
             updateLevel(e.clientY);
@@ -174,7 +164,6 @@
             isDragging = false;
         });
 
-        // אירועי מגע (למובייל)
         testTube.addEventListener('touchstart', (e) => {
             isDragging = true;
             updateLevel(e.touches[0].clientY);
@@ -183,14 +172,13 @@
         window.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
             updateLevel(e.touches[0].clientY);
-            e.preventDefault(); // מניעת גלילה נוספת
+            e.preventDefault();
         }, { passive: false });
 
         window.addEventListener('touchend', () => {
             isDragging = false;
         });
 
-        // כפתור סודי: לחיצה כפולה על הסמיילי
         emoji.addEventListener('dblclick', () => {
             valueDisplay.classList.toggle('show');
         });
